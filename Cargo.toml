@@ -1,0 +1,13 @@
+[package]
+name = "imgui-sdl2"
+version = "0.1.0"
+authors = ["Michael Fairley <michaelfairley@gmail.com>"]
+
+[dependencies]
+imgui = "0.0.17"
+sdl2 = "0.30"
+
+[dev-dependencies]
+glium = "0.18.1"
+imgui-glium-renderer = "0.0.17"
+glium_sdl2 = "0.15.0"
