@@ -13,15 +13,13 @@ use std::os::raw::{c_char, c_void};
 
 use sdl2::event::Event;
 
-pub struct ImguiSdl2<'a> {
-  window: &'a Window,
+pub struct ImguiSdl2 {
   last_frame: Instant,
   mouse_press: [bool; 5],
 }
 
-impl<'a> ImguiSdl2<'a> {
+impl ImguiSdl2 {
   pub fn new(
-    window: &'a Window,
     imgui: &mut ImGui,
   ) -> Self {
 
@@ -61,7 +59,6 @@ impl<'a> ImguiSdl2<'a> {
     }
 
     Self {
-      window,
       last_frame: Instant::now(),
       mouse_press: [false; 5],
     }
@@ -123,10 +120,11 @@ impl<'a> ImguiSdl2<'a> {
 
   pub fn frame<'ui>(
     &mut self,
+    window: &Window,
     imgui: &'ui mut ImGui,
     event_pump: &EventPump,
   ) -> imgui::Ui<'ui> {
-    let mouse_util = self.window.subsystem().sdl().mouse();
+    let mouse_util = window.subsystem().sdl().mouse();
 
     // Merging the mousedown events we received into the current state prevents us from missing
     // clicks that happen faster than a frame
@@ -177,8 +175,8 @@ impl<'a> ImguiSdl2<'a> {
     let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
     self.last_frame = now;
 
-    let window_size = self.window.size();
-    let display_size = self.window.drawable_size();
+    let window_size = window.size();
+    let display_size = window.drawable_size();
 
     let ui = imgui.frame(window_size, display_size, delta_s);
 
