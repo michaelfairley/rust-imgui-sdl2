@@ -126,7 +126,7 @@ impl<'a> ImguiSdl2<'a> {
     imgui: &'ui mut ImGui,
     event_pump: &EventPump,
   ) -> imgui::Ui<'ui> {
-    // let mouse_util = self.window.subsystem().sdl().mouse();
+    let mouse_util = self.window.subsystem().sdl().mouse();
 
     // Merging the mousedown events we received into the current state prevents us from missing
     // clicks that happen faster than a frame
@@ -141,9 +141,8 @@ impl<'a> ImguiSdl2<'a> {
     imgui.set_mouse_down(&mouse_down);
     self.mouse_press = [false; 5];
 
-    // TODO: SDL2 0.31
-    // let any_mouse_down = mouse_down.iter().any(|b| b);
-    // mouse_util.capture(any_mouse_down);
+    let any_mouse_down = mouse_down.iter().any(|&b| b);
+    mouse_util.capture(any_mouse_down);
 
 
     imgui.set_mouse_pos(mouse_state.x() as f32, mouse_state.y() as f32);
