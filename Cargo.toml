@@ -1,13 +1,12 @@
 [package]
 name = "imgui-sdl2"
 version = "0.1.0"
-authors = ["Michael Fairley <michaelfairley@gmail.com>"]
+authors = ["Michael Fairley <michael@michaelfairley.com>"]
 
 [dependencies]
-imgui = "0.0.17"
-sdl2 = "0.30"
+imgui = "0.0.18"
+sdl2 = "0.31.0"
 
 [dev-dependencies]
-glium = "0.18.1"
-imgui-glium-renderer = "0.0.17"
-glium_sdl2 = "0.15.0"
+gl = "*"
+imgui-opengl-renderer = "0.1.0"

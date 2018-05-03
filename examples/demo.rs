@@ -1,14 +1,10 @@
-extern crate glium;
-extern crate glium_sdl2;
-extern crate imgui_glium_renderer;
 extern crate sdl2;
 extern crate imgui;
 extern crate imgui_sdl2;
+extern crate gl;
+extern crate imgui_opengl_renderer;
 
 fn main() {
-  use glium_sdl2::DisplayBuild;
-  use glium::Surface;
-
   let sdl_context = sdl2::init().unwrap();
   let video = sdl_context.video().unwrap();
 
@@ -18,20 +14,23 @@ fn main() {
     gl_attr.set_context_version(3, 0);
   }
 
-  let display = video.window("rust-imgui-sdl2 demo", 1000, 1000)
+  let window = video.window("rust-imgui-sdl2 demo", 1000, 1000)
     .position_centered()
     .resizable()
     .opengl()
-    .build_glium()
+    .build()
     .unwrap();
+
+  let _gl_context = window.gl_create_context().expect("Couldn't create GL context");
+  gl::load_with(|s| video.gl_get_proc_address(s) as _);
 
   let mut imgui = imgui::ImGui::init();
   imgui.set_ini_filename(None);
 
 
-  let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(display.window(), &mut imgui);
+  let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&window, &mut imgui);
 
-  let mut renderer = imgui_glium_renderer::Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
+  let renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| video.gl_get_proc_address(s) as _);
 
   let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -55,11 +54,15 @@ fn main() {
     let ui = imgui_sdl2.frame(&mut imgui, &event_pump);
     ui.show_test_window(&mut true);
 
-    let mut target = display.draw();
-    target.clear_color(0.2, 0.2, 0.2, 1.0);
-    renderer.render(&mut target, ui).expect("Rendering failed");
-    target.finish().unwrap();
 
+    unsafe {
+      gl::ClearColor(0.2, 0.2, 0.2, 1.0);
+      gl::Clear(gl::COLOR_BUFFER_BIT);
+    }
+
+    renderer.render(ui);
+
+    window.gl_swap_window();
 
     ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / 60));
   }
