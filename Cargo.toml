@@ -17,5 +17,5 @@ imgui = "0.0.18"
 sdl2 = "0.31.0"
 
 [dev-dependencies]
-gl = "*"
+gl = "0.10.0"
 imgui-opengl-renderer = "0.1.0"
