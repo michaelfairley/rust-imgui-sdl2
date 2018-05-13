@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/michaelfairley/rust-imgui-sdl2.svg?branch=master)](https://travis-ci.org/michaelfairley/rust-imgui-sdl2)
 [![Documentation](https://docs.rs/imgui-sdl2/badge.svg)](https://docs.rs/imgui-sdl2)
-[![Version](https://img.shields.io/crates/v/imgui-sdl.svg)](https://crates.io/crates/imgui-sdl2)
+[![Version](https://img.shields.io/crates/v/imgui-sdl2.svg)](https://crates.io/crates/imgui-sdl2)
 
 [SDL2](https://github.com/Rust-SDL2/rust-sdl2) Input handling for [imgui-rs](https://github.com/Gekkio/imgui-rs)
 
