@@ -16,14 +16,14 @@ use sdl2::event::Event;
 pub struct ImguiSdl2 {
   last_frame: Instant,
   mouse_press: [bool; 5],
+  ignore_mouse: bool,
+  ignore_keyboard: bool,
 }
 
 impl ImguiSdl2 {
   pub fn new(
     imgui: &mut ImGui,
   ) -> Self {
-
-
     // TODO: upstream to imgui-rs
     {
       let io = unsafe { &mut *imgui_sys::igGetIO() };
@@ -61,10 +61,41 @@ impl ImguiSdl2 {
     Self {
       last_frame: Instant::now(),
       mouse_press: [false; 5],
+      ignore_keyboard: false,
+      ignore_mouse: false,
     }
   }
 
-  pub fn handle_event(&mut self, imgui: &mut ImGui, event: &Event) {
+  pub fn ignore_event(
+    &self,
+    event: &Event,
+  ) -> bool {
+    match event {
+      &Event::KeyDown{..}
+        | &Event::KeyUp{..}
+        | &Event::TextEditing{..}
+        | &Event::TextInput{..}
+        => self.ignore_keyboard,
+      &Event::MouseMotion{..}
+        | &Event::MouseButtonDown{..}
+        | &Event::MouseButtonUp{..}
+        | &Event::MouseWheel{..}
+        | &Event::FingerDown{..}
+        | &Event::FingerUp{..}
+        | &Event::FingerMotion{..}
+        | &Event::DollarGesture{..}
+        | &Event::DollarRecord{..}
+        | &Event::MultiGesture{..}
+        => self.ignore_mouse,
+      _ => false,
+    }
+  }
+
+  pub fn handle_event(
+    &mut self,
+    imgui: &mut ImGui,
+    event: &Event,
+  ) {
     use sdl2::mouse::MouseButton;
     use sdl2::keyboard;
 
@@ -179,6 +210,9 @@ impl ImguiSdl2 {
     let display_size = window.drawable_size();
 
     let ui = imgui.frame(window_size, display_size, delta_s);
+
+    self.ignore_keyboard = ui.want_capture_keyboard();
+    self.ignore_mouse = ui.want_capture_mouse();
 
     ui
   }

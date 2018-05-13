@@ -41,6 +41,7 @@ fn main() {
 
     for event in event_pump.poll_iter() {
       imgui_sdl2.handle_event(&mut imgui, &event);
+      if imgui_sdl2.ignore_event(&event) { continue; }
 
       match event {
         Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
@@ -49,7 +50,6 @@ fn main() {
         _ => {}
       }
     }
-
 
     let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump);
     ui.show_test_window(&mut true);
