@@ -70,22 +70,22 @@ impl ImguiSdl2 {
     &self,
     event: &Event,
   ) -> bool {
-    match event {
-      &Event::KeyDown{..}
-        | &Event::KeyUp{..}
-        | &Event::TextEditing{..}
-        | &Event::TextInput{..}
+    match *event {
+      Event::KeyDown{..}
+        | Event::KeyUp{..}
+        | Event::TextEditing{..}
+        | Event::TextInput{..}
         => self.ignore_keyboard,
-      &Event::MouseMotion{..}
-        | &Event::MouseButtonDown{..}
-        | &Event::MouseButtonUp{..}
-        | &Event::MouseWheel{..}
-        | &Event::FingerDown{..}
-        | &Event::FingerUp{..}
-        | &Event::FingerMotion{..}
-        | &Event::DollarGesture{..}
-        | &Event::DollarRecord{..}
-        | &Event::MultiGesture{..}
+      Event::MouseMotion{..}
+        | Event::MouseButtonDown{..}
+        | Event::MouseButtonUp{..}
+        | Event::MouseWheel{..}
+        | Event::FingerDown{..}
+        | Event::FingerUp{..}
+        | Event::FingerMotion{..}
+        | Event::DollarGesture{..}
+        | Event::DollarRecord{..}
+        | Event::MultiGesture{..}
         => self.ignore_mouse,
       _ => false,
     }
@@ -111,11 +111,11 @@ impl ImguiSdl2 {
       imgui.set_key_super(super_);
     }
 
-    match event {
-      &Event::MouseWheel{y, ..} => {
+    match *event {
+      Event::MouseWheel{y, ..} => {
         imgui.set_mouse_wheel(y as f32);
       },
-      &Event::MouseButtonDown{mouse_btn, ..} => {
+      Event::MouseButtonDown{mouse_btn, ..} => {
         if mouse_btn != MouseButton::Unknown {
           let index = match mouse_btn {
             MouseButton::Left => 0,
@@ -128,18 +128,18 @@ impl ImguiSdl2 {
           self.mouse_press[index] = true;
         }
       },
-      &Event::TextInput{ref text, .. } => {
+      Event::TextInput{ref text, .. } => {
         for chr in text.chars() {
           imgui.add_input_character(chr);
         }
       },
-      &Event::KeyDown{scancode, keymod, .. } => {
+      Event::KeyDown{scancode, keymod, .. } => {
         set_mod(imgui, keymod);
         if let Some(scancode) = scancode {
           imgui.set_key(scancode as u8, true);
         }
       },
-      &Event::KeyUp{scancode, keymod, .. } => {
+      Event::KeyUp{scancode, keymod, .. } => {
         set_mod(imgui, keymod);
         if let Some(scancode) = scancode {
           imgui.set_key(scancode as u8, false);
@@ -224,6 +224,7 @@ pub extern "C" fn get_clipboard_text(_user_data: *mut c_void) -> *const c_char {
 }
 
 #[doc(hidden)]
+#[cfg_attr(feature = "cargo-clippy", allow(not_unsafe_ptr_arg_deref))]
 pub extern "C" fn set_clipboard_text(_user_data: *mut c_void, text: *const c_char) {
   unsafe { sdl2_sys::SDL_SetClipboardText(text) };
 }
