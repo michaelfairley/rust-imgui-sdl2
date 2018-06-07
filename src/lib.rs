@@ -6,8 +6,8 @@ use imgui::sys as imgui_sys;
 
 use sdl2::video::Window;
 use sdl2::EventPump;
-// use sdl2::mouse::{Cursor,SystemCursor};
-use imgui::ImGui;
+use sdl2::mouse::{Cursor,SystemCursor};
+use imgui::{ImGui,ImGuiMouseCursor};
 use std::time::Instant;
 use std::os::raw::{c_char, c_void};
 
@@ -18,6 +18,7 @@ pub struct ImguiSdl2 {
   mouse_press: [bool; 5],
   ignore_mouse: bool,
   ignore_keyboard: bool,
+  cursor: (ImGuiMouseCursor, Option<Cursor>),
 }
 
 impl ImguiSdl2 {
@@ -63,6 +64,7 @@ impl ImguiSdl2 {
       mouse_press: [false; 5],
       ignore_keyboard: false,
       ignore_mouse: false,
+      cursor: (ImGuiMouseCursor::None, None),
     }
   }
 
@@ -177,26 +179,33 @@ impl ImguiSdl2 {
     imgui.set_mouse_pos(mouse_state.x() as f32, mouse_state.y() as f32);
 
 
-    // TODO: imgui 0.19
-    // let mouse_cursor = imgui.mouse_cursor();
-    // if imgui.mouse_draw_cursor() || mouse_cursor == ImGuiMouseCursor::None {
-    //   mouse_util.show_cursor(false);
-    // } else {
-    //   mouse_util.show_cursor(true);
 
-    //   let sdl_cursor = match mouse_cursor {
-    //     ImGuiMouseCursor::None => unreachable!("mouse_cursor was None!"),
-    //     ImGuiMouseCursor::Arrow => SystemCursor::Arrow,
-    //     ImGuiMouseCursor::TextInput => SystemCursor::IBeam,
-    //     ImGuiMouseCursor::Move => SystemCursor::SizeAll,
-    //     ImGuiMouseCursor::ResizeNS => SystemCursor::SizeNS,
-    //     ImGuiMouseCursor::ResizeEW => SystemCursor::SizeWE,
-    //     ImGuiMouseCursor::ResizeNESW => SystemCursor::SizeNESW,
-    //     ImGuiMouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
-    //   };
 
-    //   Cursor::from_system(sdl_cursor).unwrap().set();
-    // }
+    let mouse_cursor = imgui.mouse_cursor();
+    if imgui.mouse_draw_cursor() || mouse_cursor == ImGuiMouseCursor::None {
+      self.cursor = (ImGuiMouseCursor::None, None);
+      mouse_util.show_cursor(false);
+    } else {
+      mouse_util.show_cursor(true);
+
+      if mouse_cursor != self.cursor.0 {
+        let sdl_cursor = match mouse_cursor {
+          ImGuiMouseCursor::None => unreachable!("mouse_cursor was None!"),
+          ImGuiMouseCursor::Arrow => SystemCursor::Arrow,
+          ImGuiMouseCursor::TextInput => SystemCursor::IBeam,
+          ImGuiMouseCursor::Move => SystemCursor::SizeAll,
+          ImGuiMouseCursor::ResizeNS => SystemCursor::SizeNS,
+          ImGuiMouseCursor::ResizeEW => SystemCursor::SizeWE,
+          ImGuiMouseCursor::ResizeNESW => SystemCursor::SizeNESW,
+          ImGuiMouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
+        };
+
+        let sdl_cursor = Cursor::from_system(sdl_cursor).unwrap();
+        sdl_cursor.set();
+
+        self.cursor = (mouse_cursor, Some(sdl_cursor));
+      }
+    }
 
 
 
