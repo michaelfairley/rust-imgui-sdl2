@@ -13,9 +13,13 @@ license = "MIT/Apache-2.0"
 travis-ci = { repository = "michaelfairley/rust-imgui-sdl2" }
 
 [dependencies]
-imgui = "^0.0"
+imgui = "0.0.19-pre"
 sdl2 = "^0"
 
 [dev-dependencies]
 gl = "0.10.0"
-imgui-opengl-renderer = "0.1.0"
+imgui-opengl-renderer = "0.2"
+
+[patch.crates-io]
+imgui = { git = "https://github.com/Gekkio/imgui-rs.git" }
+imgui-opengl-renderer = { git = "https://github.com/michaelfairley/rust-imgui-opengl-renderer.git" }

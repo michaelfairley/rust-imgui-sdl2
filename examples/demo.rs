@@ -52,7 +52,7 @@ fn main() {
     }
 
     let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump);
-    ui.show_test_window(&mut true);
+    ui.show_demo_window(&mut true);
 
 
     unsafe {
