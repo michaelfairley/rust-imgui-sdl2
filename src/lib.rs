@@ -169,7 +169,7 @@ impl ImguiSdl2 {
       self.mouse_press[3] || mouse_state.x1(),
       self.mouse_press[4] || mouse_state.x2(),
     ];
-    imgui.set_mouse_down(&mouse_down);
+    imgui.set_mouse_down(mouse_down);
     self.mouse_press = [false; 5];
 
     let any_mouse_down = mouse_down.iter().any(|&b| b);
@@ -218,7 +218,11 @@ impl ImguiSdl2 {
     let window_size = window.size();
     let display_size = window.drawable_size();
 
-    let ui = imgui.frame(window_size, display_size, delta_s);
+    let frame_size = imgui::FrameSize{
+      logical_size: (window_size.0 as f64, window_size.1 as f64),
+      hidpi_factor: (display_size.0 as f64) / (window_size.0 as f64),
+    };
+    let ui = imgui.frame(frame_size, delta_s);
 
     self.ignore_keyboard = ui.want_capture_keyboard();
     self.ignore_mouse = ui.want_capture_mouse();
