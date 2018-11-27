@@ -18,6 +18,7 @@ fn main() {
     .position_centered()
     .resizable()
     .opengl()
+    .allow_highdpi()
     .build()
     .unwrap();
 
