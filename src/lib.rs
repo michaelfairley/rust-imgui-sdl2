@@ -102,10 +102,10 @@ impl ImguiSdl2 {
     use sdl2::keyboard;
 
     fn set_mod(imgui: &mut ImGui, keymod: keyboard::Mod) {
-      let ctrl = keymod.intersects(keyboard::RCTRLMOD | keyboard::LCTRLMOD);
-      let alt = keymod.intersects(keyboard::RALTMOD | keyboard::LALTMOD);
-      let shift = keymod.intersects(keyboard::RSHIFTMOD | keyboard::LSHIFTMOD);
-      let super_ = keymod.intersects(keyboard::RGUIMOD | keyboard::LGUIMOD);
+      let ctrl = keymod.intersects(keyboard::Mod::RCTRLMOD | keyboard::Mod::LCTRLMOD);
+      let alt = keymod.intersects(keyboard::Mod::RALTMOD | keyboard::Mod::LALTMOD);
+      let shift = keymod.intersects(keyboard::Mod::RSHIFTMOD | keyboard::Mod::LSHIFTMOD);
+      let super_ = keymod.intersects(keyboard::Mod::RGUIMOD | keyboard::Mod::LGUIMOD);
 
       imgui.set_key_ctrl(ctrl);
       imgui.set_key_alt(alt);
