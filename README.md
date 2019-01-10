@@ -19,7 +19,7 @@
    ```
 3. After handling input, call `frame` to start drawing.
    ```rust
-   let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump);
+   let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump.mouse_state());
    ```
 
 Take a look at the [example app](https://github.com/michaelfairley/rust-imgui-sdl2/blob/master/examples/demo.rs) to see it all in context.

@@ -5,8 +5,7 @@ use sdl2::sys as sdl2_sys;
 use imgui::sys as imgui_sys;
 
 use sdl2::video::Window;
-use sdl2::EventPump;
-use sdl2::mouse::{Cursor,SystemCursor};
+use sdl2::mouse::{Cursor,SystemCursor,MouseState};
 use imgui::{ImGui,ImGuiMouseCursor};
 use std::time::Instant;
 use std::os::raw::{c_char, c_void};
@@ -155,13 +154,12 @@ impl ImguiSdl2 {
     &mut self,
     window: &Window,
     imgui: &'ui mut ImGui,
-    event_pump: &EventPump,
+    mouse_state: &MouseState,
   ) -> imgui::Ui<'ui> {
     let mouse_util = window.subsystem().sdl().mouse();
 
     // Merging the mousedown events we received into the current state prevents us from missing
     // clicks that happen faster than a frame
-    let mouse_state = event_pump.mouse_state();
     let mouse_down = [
       self.mouse_press[0] || mouse_state.left(),
       self.mouse_press[1] || mouse_state.right(),

@@ -52,7 +52,7 @@ fn main() {
       }
     }
 
-    let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump);
+    let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump.mouse_state());
     ui.show_demo_window(&mut true);
 
 
