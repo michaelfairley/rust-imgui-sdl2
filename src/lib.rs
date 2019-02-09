@@ -191,11 +191,12 @@ impl ImguiSdl2 {
           ImGuiMouseCursor::None => unreachable!("mouse_cursor was None!"),
           ImGuiMouseCursor::Arrow => SystemCursor::Arrow,
           ImGuiMouseCursor::TextInput => SystemCursor::IBeam,
-          ImGuiMouseCursor::Move => SystemCursor::SizeAll,
+          ImGuiMouseCursor::ResizeAll => SystemCursor::SizeAll,
           ImGuiMouseCursor::ResizeNS => SystemCursor::SizeNS,
           ImGuiMouseCursor::ResizeEW => SystemCursor::SizeWE,
           ImGuiMouseCursor::ResizeNESW => SystemCursor::SizeNESW,
           ImGuiMouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
+          ImGuiMouseCursor::Hand => SystemCursor::Hand,
         };
 
         let sdl_cursor = Cursor::from_system(sdl_cursor).unwrap();
