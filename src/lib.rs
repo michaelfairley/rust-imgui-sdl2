@@ -6,64 +6,92 @@ use imgui::sys as imgui_sys;
 
 use sdl2::video::Window;
 use sdl2::mouse::{Cursor,SystemCursor,MouseState};
-use imgui::{ImGui,ImGuiMouseCursor};
+use imgui::{Context,MouseCursor,Key};
 use std::time::Instant;
 use std::os::raw::{c_char, c_void};
 
 use sdl2::event::Event;
+use std::sync::mpsc::channel;
 
 pub struct ImguiSdl2 {
   last_frame: Instant,
   mouse_press: [bool; 5],
   ignore_mouse: bool,
   ignore_keyboard: bool,
-  cursor: (ImGuiMouseCursor, Option<Cursor>),
+  cursor: Option<MouseCursor>,
+  sdl_cursor: Option<Cursor>,
+}
+
+#[doc(hidden)]
+pub struct ImGuiSdl2ClipboardBackend;
+
+impl imgui::ClipboardBackend for ImGuiSdl2ClipboardBackend {
+  fn get(&mut self) -> Option<imgui::ImString> {
+    if unsafe { sdl2_sys::SDL_HasClipboardText() } == sdl2_sys::SDL_bool::SDL_TRUE {
+      let mut text = unsafe { sdl2_sys::SDL_GetClipboardText() };
+
+      // Panic on debug builds
+      if text.is_null() {
+        #[cfg(debug_assertions)]
+        panic!("SDL_GetClipboardText returnes NULL.");
+
+        #[cfg(not(debug_assertions))]
+        return None
+      }
+
+      let string = unsafe {
+        let s = imgui::ImStr::from_ptr_unchecked(text).to_owned();
+        sdl2_sys::SDL_free(text as _);
+        s
+      };
+
+      Some(string)
+    } else {
+      None
+    }
+  }
+
+  fn set(&mut self, value: &imgui::ImStr) {
+    unsafe { sdl2_sys::SDL_SetClipboardText(value.as_ptr()) };
+  }
 }
 
 impl ImguiSdl2 {
   pub fn new(
-    imgui: &mut ImGui,
+    imgui: &mut Context
   ) -> Self {
-    // TODO: upstream to imgui-rs
-    {
-      let io = unsafe { &mut *imgui_sys::igGetIO() };
+    imgui.set_clipboard_backend(Box::new(ImGuiSdl2ClipboardBackend));
 
-      io.get_clipboard_text_fn = Some(get_clipboard_text);
-      io.set_clipboard_text_fn = Some(set_clipboard_text);
-      io.clipboard_user_data = std::ptr::null_mut();
-    }
+    use sdl2::keyboard::Scancode;
 
-    {
-      use sdl2::keyboard::Scancode;
-      use imgui::ImGuiKey;
-
-      imgui.set_imgui_key(ImGuiKey::Tab, Scancode::Tab as u8);
-      imgui.set_imgui_key(ImGuiKey::LeftArrow, Scancode::Left as u8);
-      imgui.set_imgui_key(ImGuiKey::RightArrow, Scancode::Right as u8);
-      imgui.set_imgui_key(ImGuiKey::UpArrow, Scancode::Up as u8);
-      imgui.set_imgui_key(ImGuiKey::DownArrow, Scancode::Down as u8);
-      imgui.set_imgui_key(ImGuiKey::PageUp, Scancode::PageUp as u8);
-      imgui.set_imgui_key(ImGuiKey::PageDown, Scancode::PageDown as u8);
-      imgui.set_imgui_key(ImGuiKey::Home, Scancode::Home as u8);
-      imgui.set_imgui_key(ImGuiKey::End, Scancode::End as u8);
-      imgui.set_imgui_key(ImGuiKey::Delete, Scancode::Delete as u8);
-      imgui.set_imgui_key(ImGuiKey::Backspace, Scancode::Backspace as u8);
-      imgui.set_imgui_key(ImGuiKey::Enter, Scancode::Return as u8);
-      imgui.set_imgui_key(ImGuiKey::Escape, Scancode::Escape as u8);
-      imgui.set_imgui_key(ImGuiKey::A, Scancode::A as u8);
-      imgui.set_imgui_key(ImGuiKey::C, Scancode::C as u8);
-      imgui.set_imgui_key(ImGuiKey::V, Scancode::V as u8);
-      imgui.set_imgui_key(ImGuiKey::X, Scancode::X as u8);
-      imgui.set_imgui_key(ImGuiKey::Y, Scancode::Y as u8);
-      imgui.set_imgui_key(ImGuiKey::Z, Scancode::Z as u8);
-    }
+    imgui.io_mut().key_map[Key::Tab as usize] = Scancode::Tab as u32;
+    imgui.io_mut().key_map[Key::LeftArrow as usize] = Scancode::Left as u32;
+    imgui.io_mut().key_map[Key::RightArrow as usize] = Scancode::Right as u32;
+    imgui.io_mut().key_map[Key::UpArrow as usize] = Scancode::Up as u32;
+    imgui.io_mut().key_map[Key::DownArrow as usize] = Scancode::Down as u32;
+    imgui.io_mut().key_map[Key::PageUp as usize] = Scancode::PageUp as u32;
+    imgui.io_mut().key_map[Key::PageDown as usize] = Scancode::PageDown as u32;
+    imgui.io_mut().key_map[Key::Home as usize] = Scancode::Home as u32;
+    imgui.io_mut().key_map[Key::End as usize] = Scancode::End as u32;
+    imgui.io_mut().key_map[Key::Delete as usize] = Scancode::Delete as u32;
+    imgui.io_mut().key_map[Key::Backspace as usize] = Scancode::Backspace as u32;
+    imgui.io_mut().key_map[Key::Enter as usize] = Scancode::Return as u32;
+    imgui.io_mut().key_map[Key::Escape as usize] = Scancode::Escape as u32;
+    imgui.io_mut().key_map[Key::Space as usize] = Scancode::Space as u32;
+    imgui.io_mut().key_map[Key::A as usize] = Scancode::A as u32;
+    imgui.io_mut().key_map[Key::C as usize] = Scancode::C as u32;
+    imgui.io_mut().key_map[Key::V as usize] = Scancode::V as u32;
+    imgui.io_mut().key_map[Key::X as usize] = Scancode::X as u32;
+    imgui.io_mut().key_map[Key::Y as usize] = Scancode::Y as u32;
+    imgui.io_mut().key_map[Key::Z as usize] = Scancode::Z as u32;
 
     Self {
       last_frame: Instant::now(),
       mouse_press: [false; 5],
       ignore_keyboard: false,
       ignore_mouse: false,
-      cursor: (ImGuiMouseCursor::None, None),
+      cursor: None,
+      sdl_cursor: None,
     }
   }
 
@@ -94,27 +122,27 @@ impl ImguiSdl2 {
 
   pub fn handle_event(
     &mut self,
-    imgui: &mut ImGui,
+    imgui: &mut Context,
     event: &Event,
   ) {
     use sdl2::mouse::MouseButton;
     use sdl2::keyboard;
 
-    fn set_mod(imgui: &mut ImGui, keymod: keyboard::Mod) {
+    fn set_mod(imgui: &mut Context, keymod: keyboard::Mod) {
       let ctrl = keymod.intersects(keyboard::Mod::RCTRLMOD | keyboard::Mod::LCTRLMOD);
       let alt = keymod.intersects(keyboard::Mod::RALTMOD | keyboard::Mod::LALTMOD);
       let shift = keymod.intersects(keyboard::Mod::RSHIFTMOD | keyboard::Mod::LSHIFTMOD);
       let super_ = keymod.intersects(keyboard::Mod::RGUIMOD | keyboard::Mod::LGUIMOD);
 
-      imgui.set_key_ctrl(ctrl);
-      imgui.set_key_alt(alt);
-      imgui.set_key_shift(shift);
-      imgui.set_key_super(super_);
+      imgui.io_mut().key_ctrl = ctrl;
+      imgui.io_mut().key_alt = alt;
+      imgui.io_mut().key_shift = shift;
+      imgui.io_mut().key_super = super_;
     }
 
     match *event {
       Event::MouseWheel{y, ..} => {
-        imgui.set_mouse_wheel(y as f32);
+        imgui.io_mut().mouse_wheel = y as f32;
       },
       Event::MouseButtonDown{mouse_btn, ..} => {
         if mouse_btn != MouseButton::Unknown {
@@ -131,19 +159,19 @@ impl ImguiSdl2 {
       },
       Event::TextInput{ref text, .. } => {
         for chr in text.chars() {
-          imgui.add_input_character(chr);
+          imgui.io_mut().add_input_character(chr);
         }
       },
       Event::KeyDown{scancode, keymod, .. } => {
         set_mod(imgui, keymod);
         if let Some(scancode) = scancode {
-          imgui.set_key(scancode as u8, true);
+          imgui.io_mut().keys_down[scancode as usize] = true;
         }
       },
       Event::KeyUp{scancode, keymod, .. } => {
         set_mod(imgui, keymod);
         if let Some(scancode) = scancode {
-          imgui.set_key(scancode as u8, false);
+          imgui.io_mut().keys_down[scancode as usize] = false;
         }
       },
       _ => {},
@@ -153,90 +181,80 @@ impl ImguiSdl2 {
   pub fn frame<'ui>(
     &mut self,
     window: &Window,
-    imgui: &'ui mut ImGui,
+    imgui: &'ui mut Context,
     mouse_state: &MouseState,
   ) -> imgui::Ui<'ui> {
     let mouse_util = window.subsystem().sdl().mouse();
 
+    let (wx, wh) = window.size();
+    let (dx, dh) = window.drawable_size();
+
+    imgui.io_mut().display_size = [
+      wx as f32,
+      wh as f32,
+    ];
+    imgui.io_mut().display_framebuffer_scale = [
+      (dx as f32) / (wx as f32),
+      (dh as f32) / (wh as f32),
+    ];
+
     // Merging the mousedown events we received into the current state prevents us from missing
     // clicks that happen faster than a frame
-    let mouse_down = [
+    imgui.io_mut().mouse_down = [
       self.mouse_press[0] || mouse_state.left(),
       self.mouse_press[1] || mouse_state.right(),
       self.mouse_press[2] || mouse_state.middle(),
       self.mouse_press[3] || mouse_state.x1(),
       self.mouse_press[4] || mouse_state.x2(),
     ];
-    imgui.set_mouse_down(mouse_down);
     self.mouse_press = [false; 5];
 
-    let any_mouse_down = mouse_down.iter().any(|&b| b);
+    let any_mouse_down = imgui.io_mut().mouse_down.iter().any(|&b| b);
     mouse_util.capture(any_mouse_down);
 
+    imgui.io_mut().mouse_pos = [mouse_state.x() as f32, mouse_state.y() as f32];
 
-    imgui.set_mouse_pos(mouse_state.x() as f32, mouse_state.y() as f32);
-
-
-
-
-    let mouse_cursor = imgui.mouse_cursor();
-    if imgui.mouse_draw_cursor() || mouse_cursor == ImGuiMouseCursor::None {
-      self.cursor = (ImGuiMouseCursor::None, None);
+    // TODO
+    if imgui.io().mouse_draw_cursor {
+      self.cursor = None;
+      self.sdl_cursor = None;
       mouse_util.show_cursor(false);
     } else {
       mouse_util.show_cursor(true);
 
-      if mouse_cursor != self.cursor.0 {
-        let sdl_cursor = match mouse_cursor {
-          ImGuiMouseCursor::None => unreachable!("mouse_cursor was None!"),
-          ImGuiMouseCursor::Arrow => SystemCursor::Arrow,
-          ImGuiMouseCursor::TextInput => SystemCursor::IBeam,
-          ImGuiMouseCursor::ResizeAll => SystemCursor::SizeAll,
-          ImGuiMouseCursor::ResizeNS => SystemCursor::SizeNS,
-          ImGuiMouseCursor::ResizeEW => SystemCursor::SizeWE,
-          ImGuiMouseCursor::ResizeNESW => SystemCursor::SizeNESW,
-          ImGuiMouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
-          ImGuiMouseCursor::Hand => SystemCursor::Hand,
-        };
+      // You can no longer get the cursor from the new Context type.
+      // I haven't properly checked, but perhaps it's missing?
+      let mouse_cursor = unsafe { std::mem::transmute(imgui::sys::igGetMouseCursor()) };
 
+      let sdl_cursor = match mouse_cursor {
+        MouseCursor::Arrow => SystemCursor::Arrow,
+        MouseCursor::TextInput => SystemCursor::IBeam,
+        MouseCursor::ResizeAll => SystemCursor::SizeAll,
+        MouseCursor::ResizeNS => SystemCursor::SizeNS,
+        MouseCursor::ResizeEW => SystemCursor::SizeWE,
+        MouseCursor::ResizeNESW => SystemCursor::SizeNESW,
+        MouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
+        MouseCursor::Hand => SystemCursor::Hand,
+      };
+
+      if self.cursor != Some(mouse_cursor) {
         let sdl_cursor = Cursor::from_system(sdl_cursor).unwrap();
         sdl_cursor.set();
-
-        self.cursor = (mouse_cursor, Some(sdl_cursor));
+        self.cursor = Some(mouse_cursor);
+        self.sdl_cursor = Some(sdl_cursor);
       }
     }
-
-
-
 
     let now = Instant::now();
     let delta = now - self.last_frame;
     let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
     self.last_frame = now;
 
-    let window_size = window.size();
-    let display_size = window.drawable_size();
+    imgui.io_mut().delta_time = delta_s;
 
-    let frame_size = imgui::FrameSize{
-      logical_size: (window_size.0 as f64, window_size.1 as f64),
-      hidpi_factor: (display_size.0 as f64) / (window_size.0 as f64),
-    };
-    let ui = imgui.frame(frame_size, delta_s);
+    self.ignore_keyboard = imgui.io().want_capture_keyboard;
+    self.ignore_mouse = imgui.io().want_capture_mouse;
 
-    self.ignore_keyboard = ui.want_capture_keyboard();
-    self.ignore_mouse = ui.want_capture_mouse();
-
-    ui
+    imgui.frame()
   }
-}
-
-#[doc(hidden)]
-pub extern "C" fn get_clipboard_text(_user_data: *mut c_void) -> *const c_char {
-  unsafe { sdl2_sys::SDL_GetClipboardText() }
-}
-
-#[doc(hidden)]
-#[cfg_attr(feature = "cargo-clippy", allow(not_unsafe_ptr_arg_deref))]
-pub extern "C" fn set_clipboard_text(_user_data: *mut c_void, text: *const c_char) {
-  unsafe { sdl2_sys::SDL_SetClipboardText(text) };
 }

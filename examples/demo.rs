@@ -25,7 +25,7 @@ fn main() {
   let _gl_context = window.gl_create_context().expect("Couldn't create GL context");
   gl::load_with(|s| video.gl_get_proc_address(s) as _);
 
-  let mut imgui = imgui::ImGui::init();
+  let mut imgui = imgui::Context::create();
   imgui.set_ini_filename(None);
 
 
