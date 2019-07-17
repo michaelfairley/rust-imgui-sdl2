@@ -6,12 +6,13 @@ use imgui::sys as imgui_sys;
 
 use sdl2::video::Window;
 use sdl2::mouse::{Cursor,SystemCursor,MouseState};
+use sdl2::keyboard::Scancode;
 use imgui::{Context,MouseCursor,Key};
 use std::time::Instant;
+use std::mem;
 use std::os::raw::{c_char, c_void};
 
 use sdl2::event::Event;
-use std::sync::mpsc::channel;
 
 pub struct ImguiSdl2 {
   last_frame: Instant,
@@ -22,37 +23,32 @@ pub struct ImguiSdl2 {
   sdl_cursor: Option<Cursor>,
 }
 
-#[doc(hidden)]
-pub struct ImGuiSdl2ClipboardBackend;
+struct Sdl2ClipboardBackend;
 
-impl imgui::ClipboardBackend for ImGuiSdl2ClipboardBackend {
+impl imgui::ClipboardBackend for Sdl2ClipboardBackend {
   fn get(&mut self) -> Option<imgui::ImString> {
-    if unsafe { sdl2_sys::SDL_HasClipboardText() } == sdl2_sys::SDL_bool::SDL_TRUE {
-      let mut text = unsafe { sdl2_sys::SDL_GetClipboardText() };
+    unsafe {
+      if sdl2_sys::SDL_HasClipboardText() == sdl2_sys::SDL_bool::SDL_TRUE {
+        let text = sdl2_sys::SDL_GetClipboardText();
 
-      // Panic on debug builds
-      if text.is_null() {
-        #[cfg(debug_assertions)]
-        panic!("SDL_GetClipboardText returnes NULL.");
+        // Fail silently
+        // Clipboard data doesn't fit into the buffer, ot some other error.
+        if text.is_null() { return None }
 
-        #[cfg(not(debug_assertions))]
-        return None
-      }
-
-      let string = unsafe {
-        let s = imgui::ImStr::from_ptr_unchecked(text).to_owned();
+        let string = imgui::ImStr::from_ptr_unchecked(text).to_owned();
         sdl2_sys::SDL_free(text as _);
-        s
-      };
 
-      Some(string)
-    } else {
-      None
+        Some(string)
+      } else {
+        None
+      }
     }
   }
 
   fn set(&mut self, value: &imgui::ImStr) {
-    unsafe { sdl2_sys::SDL_SetClipboardText(value.as_ptr()) };
+    unsafe {
+      sdl2_sys::SDL_SetClipboardText(value.as_ptr());
+    }
   }
 }
 
@@ -60,9 +56,7 @@ impl ImguiSdl2 {
   pub fn new(
     imgui: &mut Context
   ) -> Self {
-    imgui.set_clipboard_backend(Box::new(ImGuiSdl2ClipboardBackend));
-
-    use sdl2::keyboard::Scancode;
+    imgui.set_clipboard_backend(Box::new(Sdl2ClipboardBackend));
 
     imgui.io_mut().key_map[Key::Tab as usize] = Scancode::Tab as u32;
     imgui.io_mut().key_map[Key::LeftArrow as usize] = Scancode::Left as u32;
@@ -186,16 +180,13 @@ impl ImguiSdl2 {
   ) -> imgui::Ui<'ui> {
     let mouse_util = window.subsystem().sdl().mouse();
 
-    let (wx, wh) = window.size();
-    let (dx, dh) = window.drawable_size();
+    let (win_w, win_h) = window.size();
+    let (draw_w, draw_h) = window.drawable_size();
 
-    imgui.io_mut().display_size = [
-      wx as f32,
-      wh as f32,
-    ];
+    imgui.io_mut().display_size = [win_w as f32, win_h as f32];
     imgui.io_mut().display_framebuffer_scale = [
-      (dx as f32) / (wx as f32),
-      (dh as f32) / (wh as f32),
+      (draw_w as f32) / (win_w as f32),
+      (draw_h as f32) / (win_h as f32),
     ];
 
     // Merging the mousedown events we received into the current state prevents us from missing
@@ -224,7 +215,7 @@ impl ImguiSdl2 {
 
       // You can no longer get the cursor from the new Context type.
       // I haven't properly checked, but perhaps it's missing?
-      let mouse_cursor = unsafe { std::mem::transmute(imgui::sys::igGetMouseCursor()) };
+      let mouse_cursor = unsafe { mem::transmute(imgui_sys::igGetMouseCursor()) };
 
       let sdl_cursor = match mouse_cursor {
         MouseCursor::Arrow => SystemCursor::Arrow,
