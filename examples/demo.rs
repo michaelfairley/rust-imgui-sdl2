@@ -31,7 +31,7 @@ fn main() {
   imgui.set_ini_filename(None);
 
 
-  let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui);
+  let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui, &window);
 
   let renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| video.gl_get_proc_address(s) as _);
 

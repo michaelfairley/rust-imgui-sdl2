@@ -1,8 +1,6 @@
 extern crate sdl2;
 extern crate imgui;
 
-use sdl2::sys as sdl2_sys;
-
 use sdl2::video::Window;
 use sdl2::mouse::{Cursor,SystemCursor,MouseState};
 use sdl2::keyboard::Scancode;
@@ -18,36 +16,27 @@ pub struct ImguiSdl2 {
   sdl_cursor: Option<Cursor>,
 }
 
-struct Sdl2ClipboardBackend;
+struct Sdl2ClipboardBackend(sdl2::clipboard::ClipboardUtil);
 
 impl imgui::ClipboardBackend for Sdl2ClipboardBackend {
   fn get(&mut self) -> Option<imgui::ImString> {
-    unsafe {
-      if sdl2_sys::SDL_HasClipboardText() == sdl2_sys::SDL_bool::SDL_FALSE { return None; }
+    if !self.0.has_clipboard_text() { return None; }
 
-      let text = sdl2_sys::SDL_GetClipboardText();
-
-      if text.is_null() { return None }
-
-      let string = imgui::ImStr::from_ptr_unchecked(text).to_owned();
-      sdl2_sys::SDL_free(text as _);
-
-      Some(string)
-    }
+    self.0.clipboard_text().ok().map(imgui::ImString::new)
   }
 
   fn set(&mut self, value: &imgui::ImStr) {
-    unsafe {
-      sdl2_sys::SDL_SetClipboardText(value.as_ptr());
-    }
+    let _ = self.0.set_clipboard_text(value.to_str());
   }
 }
 
 impl ImguiSdl2 {
   pub fn new(
-    imgui: &mut Context
+    imgui: &mut Context,
+    window: &Window,
   ) -> Self {
-    imgui.set_clipboard_backend(Box::new(Sdl2ClipboardBackend));
+    let clipboard_util = window.subsystem().clipboard();
+    imgui.set_clipboard_backend(Box::new(Sdl2ClipboardBackend(clipboard_util)));
 
     imgui.io_mut().key_map[Key::Tab as usize] = Scancode::Tab as u32;
     imgui.io_mut().key_map[Key::LeftArrow as usize] = Scancode::Left as u32;
