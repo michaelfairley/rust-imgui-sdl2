@@ -2,19 +2,15 @@ extern crate sdl2;
 extern crate imgui;
 
 use sdl2::sys as sdl2_sys;
-use imgui::sys as imgui_sys;
 
 use sdl2::video::Window;
 use sdl2::mouse::{Cursor,SystemCursor,MouseState};
 use sdl2::keyboard::Scancode;
-use imgui::{Context,MouseCursor,Key};
-use std::time::Instant;
-use std::mem;
+use imgui::{Context,MouseCursor,Key,ConfigFlags};
 
 use sdl2::event::Event;
 
 pub struct ImguiSdl2 {
-  last_frame: Instant,
   mouse_press: [bool; 5],
   ignore_mouse: bool,
   ignore_keyboard: bool,
@@ -75,7 +71,6 @@ impl ImguiSdl2 {
     imgui.io_mut().key_map[Key::Z as usize] = Scancode::Z as u32;
 
     Self {
-      last_frame: Instant::now(),
       mouse_press: [false; 5],
       ignore_keyboard: false,
       ignore_mouse: false,
@@ -167,26 +162,26 @@ impl ImguiSdl2 {
     }
   }
 
-  pub fn frame<'ui>(
+  pub fn prepare_frame(
     &mut self,
+    io: &mut imgui::Io,
     window: &Window,
-    imgui: &'ui mut Context,
     mouse_state: &MouseState,
-  ) -> imgui::Ui<'ui> {
+  ) {
     let mouse_util = window.subsystem().sdl().mouse();
 
     let (win_w, win_h) = window.size();
     let (draw_w, draw_h) = window.drawable_size();
 
-    imgui.io_mut().display_size = [win_w as f32, win_h as f32];
-    imgui.io_mut().display_framebuffer_scale = [
+    io.display_size = [win_w as f32, win_h as f32];
+    io.display_framebuffer_scale = [
       (draw_w as f32) / (win_w as f32),
       (draw_h as f32) / (win_h as f32),
     ];
 
     // Merging the mousedown events we received into the current state prevents us from missing
     // clicks that happen faster than a frame
-    imgui.io_mut().mouse_down = [
+    io.mouse_down = [
       self.mouse_press[0] || mouse_state.left(),
       self.mouse_press[1] || mouse_state.right(),
       self.mouse_press[2] || mouse_state.middle(),
@@ -195,52 +190,52 @@ impl ImguiSdl2 {
     ];
     self.mouse_press = [false; 5];
 
-    let any_mouse_down = imgui.io_mut().mouse_down.iter().any(|&b| b);
+    let any_mouse_down = io.mouse_down.iter().any(|&b| b);
     mouse_util.capture(any_mouse_down);
 
-    imgui.io_mut().mouse_pos = [mouse_state.x() as f32, mouse_state.y() as f32];
+    io.mouse_pos = [mouse_state.x() as f32, mouse_state.y() as f32];
 
-    // TODO
-    if imgui.io().mouse_draw_cursor {
-      self.cursor = None;
-      self.sdl_cursor = None;
-      mouse_util.show_cursor(false);
-    } else {
-      mouse_util.show_cursor(true);
+    self.ignore_keyboard = io.want_capture_keyboard;
+    self.ignore_mouse = io.want_capture_mouse;
+  }
 
-      // You can no longer get the cursor from the new Context type.
-      // I haven't properly checked, but perhaps it's missing?
-      let mouse_cursor = unsafe { mem::transmute(imgui_sys::igGetMouseCursor()) };
+  pub fn prepare_render(
+    &mut self,
+    ui: &imgui::Ui,
+    window: &Window,
+  ) {
+    let io = ui.io();
+    if !io.config_flags.contains(ConfigFlags::NO_MOUSE_CURSOR_CHANGE) {
+      let mouse_util = window.subsystem().sdl().mouse();
 
-      let sdl_cursor = match mouse_cursor {
-        MouseCursor::Arrow => SystemCursor::Arrow,
-        MouseCursor::TextInput => SystemCursor::IBeam,
-        MouseCursor::ResizeAll => SystemCursor::SizeAll,
-        MouseCursor::ResizeNS => SystemCursor::SizeNS,
-        MouseCursor::ResizeEW => SystemCursor::SizeWE,
-        MouseCursor::ResizeNESW => SystemCursor::SizeNESW,
-        MouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
-        MouseCursor::Hand => SystemCursor::Hand,
-      };
+      match ui.mouse_cursor() {
+        Some(mouse_cursor) if !io.mouse_draw_cursor => {
+          mouse_util.show_cursor(true);
 
-      if self.cursor != Some(mouse_cursor) {
-        let sdl_cursor = Cursor::from_system(sdl_cursor).unwrap();
-        sdl_cursor.set();
-        self.cursor = Some(mouse_cursor);
-        self.sdl_cursor = Some(sdl_cursor);
+          let sdl_cursor = match mouse_cursor {
+            MouseCursor::Arrow => SystemCursor::Arrow,
+            MouseCursor::TextInput => SystemCursor::IBeam,
+            MouseCursor::ResizeAll => SystemCursor::SizeAll,
+            MouseCursor::ResizeNS => SystemCursor::SizeNS,
+            MouseCursor::ResizeEW => SystemCursor::SizeWE,
+            MouseCursor::ResizeNESW => SystemCursor::SizeNESW,
+            MouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
+            MouseCursor::Hand => SystemCursor::Hand,
+          };
+
+          if self.cursor != Some(mouse_cursor) {
+            let sdl_cursor = Cursor::from_system(sdl_cursor).unwrap();
+            sdl_cursor.set();
+            self.cursor = Some(mouse_cursor);
+            self.sdl_cursor = Some(sdl_cursor);
+          }
+        }
+        _ => {
+          self.cursor = None;
+          self.sdl_cursor = None;
+          mouse_util.show_cursor(false);
+        }
       }
     }
-
-    let now = Instant::now();
-    let delta = now - self.last_frame;
-    let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-    self.last_frame = now;
-
-    imgui.io_mut().delta_time = delta_s;
-
-    self.ignore_keyboard = imgui.io().want_capture_keyboard;
-    self.ignore_mouse = imgui.io().want_capture_mouse;
-
-    imgui.frame()
   }
 }

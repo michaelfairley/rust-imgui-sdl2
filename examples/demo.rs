@@ -4,6 +4,8 @@ extern crate imgui_sdl2;
 extern crate gl;
 extern crate imgui_opengl_renderer;
 
+use std::time::Instant;
+
 fn main() {
   let sdl_context = sdl2::init().unwrap();
   let video = sdl_context.video().unwrap();
@@ -35,6 +37,8 @@ fn main() {
 
   let mut event_pump = sdl_context.event_pump().unwrap();
 
+  let mut last_frame = Instant::now();
+
 
   'running: loop {
     use sdl2::event::Event;
@@ -52,15 +56,24 @@ fn main() {
       }
     }
 
-    let ui = imgui_sdl2.frame(&window, &mut imgui, &event_pump.mouse_state());
-    ui.show_demo_window(&mut true);
 
+    imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
+
+    let now = Instant::now();
+    let delta = now - last_frame;
+    let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
+    last_frame = now;
+    imgui.io_mut().delta_time = delta_s;
+
+    let ui = imgui.frame();
+    ui.show_demo_window(&mut true);
 
     unsafe {
       gl::ClearColor(0.2, 0.2, 0.2, 1.0);
       gl::Clear(gl::COLOR_BUFFER_BIT);
     }
 
+    imgui_sdl2.prepare_render(&ui, &window);
     renderer.render(ui);
 
     window.gl_swap_window();
