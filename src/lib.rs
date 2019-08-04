@@ -10,7 +10,6 @@ use sdl2::keyboard::Scancode;
 use imgui::{Context,MouseCursor,Key};
 use std::time::Instant;
 use std::mem;
-use std::os::raw::{c_char, c_void};
 
 use sdl2::event::Event;
 
@@ -28,20 +27,16 @@ struct Sdl2ClipboardBackend;
 impl imgui::ClipboardBackend for Sdl2ClipboardBackend {
   fn get(&mut self) -> Option<imgui::ImString> {
     unsafe {
-      if sdl2_sys::SDL_HasClipboardText() == sdl2_sys::SDL_bool::SDL_TRUE {
-        let text = sdl2_sys::SDL_GetClipboardText();
+      if sdl2_sys::SDL_HasClipboardText() == sdl2_sys::SDL_bool::SDL_FALSE { return None; }
 
-        // Fail silently
-        // Clipboard data doesn't fit into the buffer, ot some other error.
-        if text.is_null() { return None }
+      let text = sdl2_sys::SDL_GetClipboardText();
 
-        let string = imgui::ImStr::from_ptr_unchecked(text).to_owned();
-        sdl2_sys::SDL_free(text as _);
+      if text.is_null() { return None }
 
-        Some(string)
-      } else {
-        None
-      }
+      let string = imgui::ImStr::from_ptr_unchecked(text).to_owned();
+      sdl2_sys::SDL_free(text as _);
+
+      Some(string)
     }
   }
 
