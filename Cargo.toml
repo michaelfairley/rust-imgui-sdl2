@@ -13,9 +13,9 @@ license = "MIT/Apache-2.0"
 travis-ci = { repository = "michaelfairley/rust-imgui-sdl2" }
 
 [dependencies]
-imgui = "0.1"
+imgui = "0.2"
 sdl2 = "0.32.1"
 
 [dev-dependencies]
 gl = "0.10.0"
-imgui-opengl-renderer = "0.5"
+imgui-opengl-renderer = "0.6"
