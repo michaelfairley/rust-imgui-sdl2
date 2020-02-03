@@ -1,7 +1,7 @@
 [package]
 name = "imgui-sdl2"
 description = "SDL2 Input handling for imgui-rs"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Michael Fairley <michael@michaelfairley.com>"]
 homepage = "https://github.com/michaelfairley/rust-imgui-sdl2"
 repository = "https://github.com/michaelfairley/rust-imgui-sdl2"
@@ -14,7 +14,7 @@ travis-ci = { repository = "michaelfairley/rust-imgui-sdl2" }
 
 [dependencies]
 imgui = "0.2"
-sdl2 = "0.32.1"
+sdl2 = "0.33"
 
 [dev-dependencies]
 gl = "0.10.0"
