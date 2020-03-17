@@ -210,6 +210,7 @@ impl ImguiSdl2 {
             MouseCursor::ResizeNESW => SystemCursor::SizeNESW,
             MouseCursor::ResizeNWSE => SystemCursor::SizeNWSE,
             MouseCursor::Hand => SystemCursor::Hand,
+            MouseCursor::NotAllowed => SystemCursor::No,
           };
 
           if self.cursor != Some(mouse_cursor) {
