@@ -14,7 +14,7 @@ travis-ci = { repository = "michaelfairley/rust-imgui-sdl2" }
 
 [dependencies]
 imgui = "0.7"
-sdl2 = "0.34"
+sdl2 = ">=0.34, <0.36"
 
 [dev-dependencies]
 gl = "0.10.0"
