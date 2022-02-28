@@ -19,14 +19,14 @@ pub struct ImguiSdl2 {
 struct Sdl2ClipboardBackend(sdl2::clipboard::ClipboardUtil);
 
 impl imgui::ClipboardBackend for Sdl2ClipboardBackend {
-  fn get(&mut self) -> Option<imgui::ImString> {
+  fn get(&mut self) -> Option<String> {
     if !self.0.has_clipboard_text() { return None; }
 
-    self.0.clipboard_text().ok().map(imgui::ImString::new)
+    self.0.clipboard_text().ok().map(String::from)
   }
 
-  fn set(&mut self, value: &imgui::ImStr) {
-    let _ = self.0.set_clipboard_text(value.to_str());
+  fn set(&mut self, value: &str) {
+    let _ = self.0.set_clipboard_text(value);
   }
 }
 
@@ -36,7 +36,7 @@ impl ImguiSdl2 {
     window: &Window,
   ) -> Self {
     let clipboard_util = window.subsystem().clipboard();
-    imgui.set_clipboard_backend(Box::new(Sdl2ClipboardBackend(clipboard_util)));
+    imgui.set_clipboard_backend(Sdl2ClipboardBackend(clipboard_util));
 
     imgui.io_mut().key_map[Key::Tab as usize] = Scancode::Tab as u32;
     imgui.io_mut().key_map[Key::LeftArrow as usize] = Scancode::Left as u32;
