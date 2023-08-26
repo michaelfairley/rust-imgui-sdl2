@@ -74,7 +74,7 @@ fn main() {
     }
 
     imgui_sdl2.prepare_render(&ui, &window);
-    renderer.render(ui);
+    renderer.render(&mut imgui);
 
     window.gl_swap_window();
 

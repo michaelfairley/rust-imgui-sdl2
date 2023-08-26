@@ -15,4 +15,4 @@ sdl2 = ">=0.34, <0.36"
 
 [dev-dependencies]
 gl = "0.10.0"
-imgui-opengl-renderer = "0.11.1"
+imgui-opengl-renderer = "0.12.1"
