@@ -11,7 +11,7 @@ license = "MIT/Apache-2.0"
 
 [dependencies]
 imgui = ">=0.8.0, <0.12.0"
-sdl2 = ">=0.34, <0.36"
+sdl2 = ">=0.34, <0.37"
 
 [dev-dependencies]
 gl = "0.10.0"
